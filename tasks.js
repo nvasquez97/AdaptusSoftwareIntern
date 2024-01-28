@@ -2,7 +2,8 @@ module.exports = (resources) => {
   const my = {}
   const shared = {
     ERROR: 'Error',
-    PATH: '/v1/service/test/loadinfo'
+    PATH: '/v1/service/test/loadinfo',
+    OK: 'successfully:'
   }
 
   // ============================================================================
@@ -14,7 +15,13 @@ module.exports = (resources) => {
     try {
       const data = await setup(await validate(await load(input)))
       output = data.files + data.errored_files
-      s3_driver.add(shared.PATH, output)
+      //upload file to S3
+        // s3_driver.add(shared.PATH, output).then(response => {
+        //   console.log(shared.OK, response);
+        // })
+        //   .catch(error => {
+        //     console.error(shared.ERROR, error);
+        // });
     } catch (e) {
       throw new Error(JSON.stringify({
         status: shared.ERROR,
@@ -50,7 +57,7 @@ module.exports = (resources) => {
     }
 
     async function validate(config) {
-      // valited inputs exist
+      // validat inputs exist
       if (!config.files) throw new Error('MissingInput: Files')
       if (!config.scanned_files) throw new Error('MissingInput: scanned_files')
       if (!config.errored_files) throw new Error('MissingInput: errored_files')
@@ -60,13 +67,14 @@ module.exports = (resources) => {
       return config
     }
 
+    //validated if a load is already processed
     async function validationIfProcessed(files, validate) {
       for (let val of validate) {
         files = files.filter(file => file != val);
       }
       return files;
     }
-
+    //validate if IDs are alphanumerical
     async function alphanumericValidation(id) {
       const regex = /[^\w\s]/;
       return regex.test(id);
