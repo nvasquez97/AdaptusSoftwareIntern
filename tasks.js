@@ -14,14 +14,18 @@ module.exports = (resources) => {
 
     try {
       const data = await setup(await validate(await load(input)))
-      output = data.files + data.errored_files
+      output = [...data.files , ...data.errored_files]
       //upload file to S3
-        // s3_driver.add(shared.PATH, output).then(response => {
-        //   console.log(shared.OK, response);
-        // })
-        //   .catch(error => {
-        //     console.error(shared.ERROR, error);
-        // });
+      // s3_driver.add(shared.PATH, output).then(response => {
+      //   console.log(shared.OK, response);
+      // })
+      //   .catch(error => {
+      //     console.error(shared.ERROR, error);
+      //     throw new Error(JSON.stringify({
+      //     status: shared.ERROR,
+      //     messageError: error.message,
+      // }))
+      // });
     } catch (e) {
       throw new Error(JSON.stringify({
         status: shared.ERROR,
@@ -46,7 +50,7 @@ module.exports = (resources) => {
       data.files = await validationIfProcessed(data.files, data.scanned_files)
       // validate length files elements to push in errors
       for (let file of data.files) {
-        if (file.length < 15 || file.length > 19 || await alphanumericValidation(file) == true) {
+        if (file.length < 15 || file.length > 19 || await alphanumericValidation(file) === true) {
           data.errored_files.push(file)
         }
       }
@@ -58,24 +62,25 @@ module.exports = (resources) => {
 
     async function validate(config) {
       // validat inputs exist
-      if (!config.files) throw new Error('MissingInput: Files')
-      if (!config.scanned_files) throw new Error('MissingInput: scanned_files')
-      if (!config.errored_files) throw new Error('MissingInput: errored_files')
-      [
-        config.files
-      ].forEach(([item, name]) => { if (!item) { throw new Error('Files Empty') } })
+      ;[
+        [config.files, "files - This is an array of files"],
+        [config.scanned_files, "scanned_files - This is an array of scanned files"],
+        [config.errored_files, "errored_files - This is an array with the errored_files"],
+      ].forEach(([item, name]) => { if (!item) { throw new Error('MissingInput: ' + name) } })
       return config
     }
 
+
     //validated if a load is already processed
-    async function validationIfProcessed(files, validate) {
+    function validationIfProcessed(files, validate) {
+      let validated_files = files
       for (let val of validate) {
-        files = files.filter(file => file != val);
+        validated_files = files.filter(file => file !== val)
       }
-      return files;
+      return validated_files
     }
     //validate if IDs are alphanumerical
-    async function alphanumericValidation(id) {
+    function alphanumericValidation(id) {
       const regex = /[^\w\s]/;
       return regex.test(id);
     }
